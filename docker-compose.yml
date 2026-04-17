@@ -1,0 +1,18 @@
+# Postgres только для разработки. Порт 5433 на хосте — чтобы не конфликтовать с
+# локальным PostgreSQL на Windows (часто уже занимает 5432).
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: logix-postgres
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: logix
+      POSTGRES_PASSWORD: logix
+      POSTGRES_DB: logix
+    volumes:
+      - logix_pgdata:/var/lib/postgresql/data
+
+volumes:
+  logix_pgdata:
