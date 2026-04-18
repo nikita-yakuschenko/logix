@@ -1,7 +1,15 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-const { PrismaClient } = require('@prisma/client');
+import 'dotenv/config';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../src/generated/prisma/client';
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL is not set');
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString }),
+});
 
 const types = [
   { code: 'gazelle', name: 'Газель', sortOrder: 10, rate: 35, min: 2500 },
@@ -18,7 +26,6 @@ const DEPOT_DEFAULT = {
 };
 
 async function main() {
-  // Первый склад (MVP — один): всегда приводим к производству в НН, ул. Зайцева, 31.
   let depot = await prisma.depot.findFirst({ orderBy: { createdAt: 'asc' } });
   if (!depot) {
     depot = await prisma.depot.create({ data: DEPOT_DEFAULT });
@@ -30,7 +37,7 @@ async function main() {
   }
 
   for (const t of types) {
-    let vt = await prisma.vehicleType.findUnique({ where: { code: t.code } });
+    const vt = await prisma.vehicleType.findUnique({ where: { code: t.code } });
     if (!vt) {
       await prisma.vehicleType.create({
         data: {

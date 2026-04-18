@@ -4,8 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DistanceSource, Prisma } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
+import { DistanceSource, Prisma } from '../generated/prisma/client';
 import { GeocodingService } from '../geocoding/geocoding.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { IRoutingProvider } from '../routing/routing.types';
@@ -39,7 +38,7 @@ type ComputedQuote = {
   routingMeta: Record<string, unknown>;
   inputLines: CreateQuoteDto['lines'];
   breakdown: BreakdownLine[];
-  total: Decimal;
+  total: Prisma.Decimal;
 };
 
 @Injectable()
@@ -188,20 +187,20 @@ export class QuotesService {
     const byId = new Map(vehicles.map((v) => [v.id, v]));
 
     const breakdown: BreakdownLine[] = [];
-    let total = new Decimal(0);
+    let total = new Prisma.Decimal(0);
 
     for (const line of linesIn) {
       const v = byId.get(line.vehicleTypeId);
       if (!v || !v.tariff) {
         throw new NotFoundException(`Тип ТС не найден или нет тарифа: ${line.vehicleTypeId}`);
       }
-      const rate = new Decimal(v.tariff.ratePerKm);
-      const minT = new Decimal(v.tariff.minimumTotal);
-      const dist = new Decimal(distanceKm);
-      const qty = new Decimal(line.quantity);
+      const rate = new Prisma.Decimal(v.tariff.ratePerKm);
+      const minT = new Prisma.Decimal(v.tariff.minimumTotal);
+      const dist = new Prisma.Decimal(distanceKm);
+      const qty = new Prisma.Decimal(line.quantity);
       const raw = rate.mul(dist).mul(qty);
       const perVehicle = rate.mul(dist);
-      const cappedPerVehicle = Decimal.max(minT, perVehicle);
+      const cappedPerVehicle = Prisma.Decimal.max(minT, perVehicle);
       const sub = cappedPerVehicle.mul(qty);
       const minimumApplied = cappedPerVehicle.gt(perVehicle);
       breakdown.push({
@@ -273,7 +272,7 @@ export class QuotesService {
     routingMeta: unknown;
     inputLines: unknown;
     breakdown: unknown;
-    total: Decimal;
+    total: Prisma.Decimal;
     currency: string;
     createdBy?: string | null;
     createdAt: Date;

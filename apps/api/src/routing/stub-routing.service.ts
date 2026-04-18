@@ -2,7 +2,7 @@ import {
   BadRequestException,
   Injectable,
 } from '@nestjs/common';
-import { DistanceSource } from '@prisma/client';
+import { DistanceSource } from '../generated/prisma/client';
 import type {
   IRoutingProvider,
   RoutingInput,

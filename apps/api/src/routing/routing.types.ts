@@ -1,4 +1,4 @@
-import type { DistanceSource } from '@prisma/client';
+import type { DistanceSource } from '../generated/prisma/client';
 
 /** Токен Nest DI для провайдера маршрутов. */
 export const ROUTING_PROVIDER = 'ROUTING_PROVIDER';
