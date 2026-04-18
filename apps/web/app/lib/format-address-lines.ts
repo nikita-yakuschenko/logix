@@ -137,3 +137,75 @@ export function formatAddressThreeLines(raw: string): AddressThreeLines {
     line3: line3Out,
   }
 }
+
+/**
+ * Подпись объекта для таблицы расчётов: регион (область/край/респ.),
+ * район(и), населённый пункт — без улицы и дома.
+ * Населённый пункт берём из {@link formatAddressThreeLines}: там тот же разбор, что в карточке (line2),
+ * иначе отдельный проход по частям теряет «село …» из‑за границ `isSettlement` / смешения скриптов в regex.
+ */
+export function formatObjectAddressLabel(raw: string | null): string {
+  const cleaned = raw?.trim()
+  if (!cleaned) return '—'
+
+  const parts = cleaned
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean)
+  if (parts.length === 0) return '—'
+
+  const three = formatAddressThreeLines(cleaned)
+  const settlement = three.line2.trim()
+
+  let i = 0
+  if (POSTAL.test(parts[0])) i = 1
+
+  const segments: string[] = []
+
+  if (i < parts.length && isRegionPart(parts[i])) {
+    segments.push(parts[i])
+    i++
+  }
+
+  while (i < parts.length && isDistrictOrMunicipal(parts[i])) {
+    segments.push(parts[i])
+    i++
+  }
+
+  if (settlement) {
+    segments.push(settlement)
+  } else if (
+    i < parts.length &&
+    !isStreetPart(parts[i]) &&
+    !isHousePart(parts[i])
+  ) {
+    segments.push(parts[i])
+  }
+
+  if (segments.length > 0) {
+    return segments.join(', ')
+  }
+
+  // Индекс + город без строки области: в карточке это line1
+  if (three.line1 && three.line1 !== '—') {
+    return three.line1
+  }
+
+  let j = 0
+  if (parts[0] && POSTAL.test(parts[0])) j = 1
+  while (
+    j < parts.length &&
+    !isStreetPart(parts[j]) &&
+    !isHousePart(parts[j])
+  ) {
+    segments.push(parts[j])
+    j++
+    if (segments.length >= 4) break
+  }
+
+  if (segments.length > 0) {
+    return segments.join(', ')
+  }
+
+  return parts[0]
+}

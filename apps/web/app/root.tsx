@@ -18,6 +18,10 @@ export const links: Route.LinksFunction = () => [
   { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
 ]
 
+export function meta(_args: Route.MetaArgs) {
+  return [{ title: 'logix' }]
+}
+
 export default function Root() {
   return (
     <html lang="ru" suppressHydrationWarning>

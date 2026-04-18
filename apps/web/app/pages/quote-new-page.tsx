@@ -18,6 +18,8 @@ import {
 } from '@/lib/vehicle-types-fallback'
 import { cn } from '@/lib/utils'
 import { useSettings } from '@/settings/settings-context'
+import { formatDistanceKm } from '@/lib/format-km'
+import { quoteDetailPathSegment } from '@/lib/quote-path'
 import { formatRubAmount } from '@/lib/format-rub'
 import { RouteMiniMap } from '@/components/route-mini-map'
 
@@ -407,8 +409,11 @@ export function QuoteNewPage() {
         body: JSON.stringify(buildBody(true)),
       })
       if (!res.ok) throw new Error(await parseApiError(res))
-      const saved = (await res.json()) as { id: string }
-      navigate(`/quotes/${saved.id}`)
+      const saved = (await res.json()) as {
+        id: string
+        publicCode?: string | null
+      }
+      navigate(`/quotes/${quoteDetailPathSegment(saved)}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка сохранения')
     } finally {
@@ -635,7 +640,7 @@ export function QuoteNewPage() {
             {preview ? (
               <>
                 {preview.depotName ? `${preview.depotName} · ` : null}
-                {preview.distanceKm} км
+                {formatDistanceKm(preview.distanceKm)}
               </>
             ) : (
               '—'

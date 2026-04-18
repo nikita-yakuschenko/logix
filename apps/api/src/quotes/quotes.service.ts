@@ -11,6 +11,19 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { IRoutingProvider } from '../routing/routing.types';
 import { ROUTING_PROVIDER } from '../routing/routing.types';
 import type { CreateQuoteDto } from './dto/create-quote.dto';
+import {
+  looksLikeQuotePublicCode,
+  randomQuotePublicCode,
+} from './quote-public-code';
+
+function isUniqueConstraintError(e: unknown): boolean {
+  return (
+    typeof e === 'object' &&
+    e !== null &&
+    'code' in e &&
+    (e as { code?: string }).code === 'P2002'
+  );
+}
 
 export type BreakdownLine = {
   vehicleTypeId: string;
@@ -78,28 +91,39 @@ export class QuotesService {
     const createdBy =
       dto.createdBy?.trim().length ? dto.createdBy.trim().slice(0, 200) : null;
 
-    const quote = await this.prisma.quote.create({
-      data: {
-        depotId: c.depotId,
-        destinationAddress: c.destinationAddress,
-        destinationLat: c.destinationLat,
-        destinationLng: c.destinationLng,
-        contractReference: c.contractReference,
-        distanceKm: c.distanceKm,
-        distanceSource: c.distanceSource,
-        routingMeta: c.routingMeta as Prisma.InputJsonValue,
-        inputLines: c.inputLines as object,
-        breakdown: c.breakdown as object,
-        total: c.total,
-        currency: 'RUB',
-        createdBy,
-      },
-      include: {
-        depot: { select: { name: true, lat: true, lng: true, address: true } },
-      },
-    });
+    const include = {
+      depot: { select: { name: true, lat: true, lng: true, address: true } },
+    };
 
-    return this.serializeQuote(quote);
+    for (let attempt = 0; attempt < 32; attempt++) {
+      const publicCode = randomQuotePublicCode();
+      try {
+        const quote = await this.prisma.quote.create({
+          data: {
+            publicCode,
+            depotId: c.depotId,
+            destinationAddress: c.destinationAddress,
+            destinationLat: c.destinationLat,
+            destinationLng: c.destinationLng,
+            contractReference: c.contractReference,
+            distanceKm: c.distanceKm,
+            distanceSource: c.distanceSource,
+            routingMeta: c.routingMeta as Prisma.InputJsonValue,
+            inputLines: c.inputLines as object,
+            breakdown: c.breakdown as object,
+            total: c.total,
+            currency: 'RUB',
+            createdBy,
+          },
+          include,
+        });
+        return this.serializeQuote(quote);
+      } catch (e) {
+        if (isUniqueConstraintError(e)) continue;
+        throw e;
+      }
+    }
+    throw new Error('Не удалось назначить публичный код расчёта');
   }
 
   private async computeQuote(dto: CreateQuoteDto): Promise<ComputedQuote> {
@@ -248,12 +272,30 @@ export class QuotesService {
     return rows.map((q) => this.serializeQuote(q));
   }
 
-  async findById(id: string) {
+  async findById(idOrCode: string) {
+    const raw = idOrCode.trim();
+    if (!raw.length) {
+      throw new NotFoundException('Расчёт не найден');
+    }
+
+    const include = {
+      depot: { select: { name: true, lat: true, lng: true, address: true } },
+    };
+
+    if (looksLikeQuotePublicCode(raw)) {
+      const row = await this.prisma.quote.findUnique({
+        where: { publicCode: raw.toUpperCase() },
+        include,
+      });
+      if (row) {
+        return this.serializeQuote(row);
+      }
+      throw new NotFoundException('Расчёт не найден');
+    }
+
     const row = await this.prisma.quote.findUnique({
-      where: { id },
-      include: {
-        depot: { select: { name: true, lat: true, lng: true, address: true } },
-      },
+      where: { id: raw },
+      include,
     });
     if (!row) {
       throw new NotFoundException('Расчёт не найден');
@@ -263,6 +305,7 @@ export class QuotesService {
 
   private serializeQuote(q: {
     id: string;
+    publicCode: string | null;
     depotId: string;
     destinationAddress: string | null;
     destinationLat: number | null;
@@ -281,6 +324,7 @@ export class QuotesService {
   }) {
     return {
       id: q.id,
+      publicCode: q.publicCode,
       depotId: q.depotId,
       depotName: q.depot?.name,
       depotLat: q.depot?.lat ?? null,

@@ -1,19 +1,31 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
 import { apiUrl } from '@/lib/api-url'
+import { QuoteNumberCopyCell } from '@/components/quote-number-copy-cell'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useQuotesListFilters } from '@/contexts/quotes-list-filters-context'
+import { formatObjectAddressLabel } from '@/lib/format-address-lines'
+import {
+  applyQuoteFilters,
+  hasActiveQuoteFilters,
+  parseQuoteFilters,
+} from '@/lib/quote-filters'
+import { quoteDetailPathSegment } from '@/lib/quote-path'
 import { cn } from '@/lib/utils'
+import { formatDistanceKm } from '@/lib/format-km'
 import { formatRubAmount } from '@/lib/format-rub'
 
 const SKELETON_ROW_COUNT = 8
+/** Видимая ширина колонки «адрес» — ~70 знаков в единицах `ch`, без сокращения до порога; длиннее — ellipsis + title */
+const ADDRESS_COL_MAX_CH = 70
 
 type QuoteRow = {
   id: string
+  publicCode?: string | null
   depotName?: string
   destinationAddress: string | null
   distanceKm: number
-  distanceSource: string
   total: string
   currency: string
   createdAt: string
@@ -35,11 +47,11 @@ function formatQuoteDate(iso: string): string {
 function QuotesTableColgroup() {
   return (
     <colgroup>
-      <col className="w-[10%]" />
-      <col className="w-[34%]" />
-      <col className="w-[9%]" />
+      <col className="w-[8%]" />
       <col className="w-[11%]" />
-      <col className="w-[18%]" />
+      <col className="w-[33%] min-w-[70ch]" />
+      <col className="w-[10%]" />
+      <col className="w-[20%]" />
       <col className="w-[18%]" />
     </colgroup>
   )
@@ -49,11 +61,18 @@ export function QuotesListPage() {
   const navigate = useNavigate()
   const [quotes, setQuotes] = useState<QuoteRow[]>([])
   const [listLoading, setListLoading] = useState(true)
+  const [searchParams] = useSearchParams()
+  const rawSearchTerm = (searchParams.get('q') ?? '').trim()
+  const searchTerm = rawSearchTerm.toLowerCase()
+  const { setAuthors } = useQuotesListFilters()
+
+  const filters = useMemo(() => parseQuoteFilters(searchParams), [searchParams])
+  const filtersActive = hasActiveQuoteFilters(filters)
 
   const loadQuotes = useCallback(async () => {
     setListLoading(true)
     try {
-      const res = await fetch(apiUrl('/api/quotes?take=30'))
+      const res = await fetch(apiUrl('/api/quotes?take=100'))
       if (!res.ok) throw new Error(`quotes ${res.status}`)
       setQuotes(await res.json())
     } finally {
@@ -65,8 +84,31 @@ export function QuotesListPage() {
     void loadQuotes()
   }, [loadQuotes])
 
+  // Пушим уникальных авторов в контекст — шапка использует это для dropdown фильтра
+  useEffect(() => {
+    setAuthors(quotes.map((q) => q.createdBy ?? '').filter(Boolean))
+  }, [quotes, setAuthors])
+
+  // Сначала — фильтры (период + авторы), потом — полнотекстовый поиск
+  const visibleQuotes = useMemo(() => {
+    const filtered = applyQuoteFilters(quotes, filters)
+    if (!searchTerm) return filtered
+    return filtered.filter((q) => {
+      const address = formatObjectAddressLabel(q.destinationAddress).toLowerCase()
+      const code = (q.publicCode ?? '').toLowerCase()
+      const author = (q.createdBy ?? '').toLowerCase()
+      const date = formatQuoteDate(q.createdAt).toLowerCase()
+      return (
+        code.includes(searchTerm) ||
+        address.includes(searchTerm) ||
+        author.includes(searchTerm) ||
+        date.includes(searchTerm)
+      )
+    })
+  }, [quotes, filters, searchTerm])
+
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-6">
+    <div className="mx-auto flex w-full max-w-[min(100%,96rem)] flex-col gap-6 px-6 py-6">
       <Card>
         <CardContent>
           <div className="overflow-x-auto">
@@ -78,9 +120,11 @@ export function QuotesListPage() {
               <thead>
                 <tr className={rowH}>
                   <th className={`${cell} font-medium`}>Дата</th>
-                  <th className={`${cell} font-medium`}>Куда</th>
-                  <th className={`${cell} font-medium`}>Км</th>
-                  <th className={`${cell} font-medium`}>Источник</th>
+                  <th className={`${cell} font-medium`} title="Номер расчёта">
+                    Номер
+                  </th>
+                  <th className={`${cell} font-medium`}>Адрес объекта</th>
+                  <th className={`${cell} font-medium`}>Расстояние</th>
                   <th className={`${cell} font-medium`}>Кто считал</th>
                   <th className={`${cell} text-right font-medium tabular-nums`}>
                     Сумма
@@ -94,10 +138,13 @@ export function QuotesListPage() {
                         <td className={cell}>
                           <Skeleton className={`${skLine} w-full`} />
                         </td>
-                        <td className={`${cell} min-w-0`}>
-                          <Skeleton className={`${skLine} w-full`} />
-                        </td>
                         <td className={cell}>
+                          <div className="inline-flex items-center gap-0">
+                            <Skeleton className={`${skLine} w-[7ch] shrink-0`} />
+                            <Skeleton className="size-5 shrink-0 rounded-sm" />
+                          </div>
+                        </td>
+                        <td className={`${cell} min-w-0`}>
                           <Skeleton className={`${skLine} w-full`} />
                         </td>
                         <td className={cell}>
@@ -113,39 +160,46 @@ export function QuotesListPage() {
                         </td>
                       </tr>
                     ))
-                  : quotes.map((q) => (
+                  : visibleQuotes.map((q) => {
+                      const objectAddress = formatObjectAddressLabel(
+                        q.destinationAddress,
+                      )
+                      return (
                       <tr
                         key={q.id}
                         role="link"
                         tabIndex={0}
                         className={`${rowH} hover:bg-muted/50 cursor-pointer transition-colors`}
-                        onClick={() => navigate(`/quotes/${q.id}`)}
+                        onClick={() =>
+                          navigate(`/quotes/${quoteDetailPathSegment(q)}`)
+                        }
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault()
-                            navigate(`/quotes/${q.id}`)
+                            navigate(`/quotes/${quoteDetailPathSegment(q)}`)
                           }
                         }}
                       >
                         <td className={`${cell} whitespace-nowrap`}>
                           {formatQuoteDate(q.createdAt)}
                         </td>
+                        <td className={cn(cell, 'whitespace-nowrap')}>
+                          <QuoteNumberCopyCell quote={q} />
+                        </td>
                         <td
                           className={cn(
                             cell,
                             'text-muted-foreground min-w-0 truncate',
+                            `max-w-[${ADDRESS_COL_MAX_CH}ch]`,
                           )}
-                          title={q.destinationAddress ?? ''}
+                          title={
+                            q.destinationAddress ? objectAddress : ''
+                          }
                         >
-                          {q.destinationAddress ?? '—'}
+                          {objectAddress}
                         </td>
                         <td className={`${cell} tabular-nums`}>
-                          {q.distanceKm}
-                        </td>
-                        <td className={cell}>
-                          {q.distanceSource === 'MANUAL_OVERRIDE'
-                            ? 'вручную'
-                            : 'карта'}
+                          {formatDistanceKm(q.distanceKm)}
                         </td>
                         <td
                           className={cn(cell, 'min-w-0 truncate')}
@@ -159,7 +213,8 @@ export function QuotesListPage() {
                           {formatRubAmount(q.total)}
                         </td>
                       </tr>
-                    ))}
+                      )
+                    })}
               </tbody>
             </table>
             {!listLoading && quotes.length === 0 && (
@@ -168,6 +223,17 @@ export function QuotesListPage() {
                 «Новый расчёт» в шапке справа.
               </p>
             )}
+            {!listLoading &&
+              quotes.length > 0 &&
+              visibleQuotes.length === 0 && (
+                <p className="text-muted-foreground mt-4 text-sm">
+                  {rawSearchTerm
+                    ? `По запросу «${rawSearchTerm}» ничего не найдено.`
+                    : filtersActive
+                      ? 'Под выбранные фильтры ничего не подходит.'
+                      : 'Ничего не найдено.'}
+                </p>
+              )}
           </div>
         </CardContent>
       </Card>

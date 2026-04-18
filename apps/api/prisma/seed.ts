@@ -1,6 +1,35 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
+import { randomQuotePublicCode } from '../src/quotes/quote-public-code';
+
+function isUniqueConstraintError(e: unknown): boolean {
+  return (
+    typeof e === 'object' &&
+    e !== null &&
+    'code' in e &&
+    (e as { code?: string }).code === 'P2002'
+  );
+}
+
+async function backfillQuotePublicCodes(p: PrismaClient) {
+  const rows = await p.quote.findMany({
+    where: { publicCode: null },
+    select: { id: true },
+  });
+  for (const { id } of rows) {
+    for (let attempt = 0; attempt < 32; attempt++) {
+      const publicCode = randomQuotePublicCode();
+      try {
+        await p.quote.update({ where: { id }, data: { publicCode } });
+        break;
+      } catch (e) {
+        if (isUniqueConstraintError(e)) continue;
+        throw e;
+      }
+    }
+  }
+}
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -68,6 +97,8 @@ async function main() {
       });
     }
   }
+
+  await backfillQuotePublicCodes(prisma);
 
   // eslint-disable-next-line no-console
   console.log('Seed OK, depot:', depot.id);

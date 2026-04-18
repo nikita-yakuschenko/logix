@@ -1,19 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { apiUrl } from '@/lib/api-url'
+import { useQuoteDetailHeader } from '@/contexts/quote-detail-header-context'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { AddressLinesBlock } from '@/components/address-lines'
+import { formatObjectAddressLabel } from '@/lib/format-address-lines'
+import { formatDistanceKm, formatKmNumber } from '@/lib/format-km'
 import { formatRubAmount } from '@/lib/format-rub'
+import { QuoteRouteWidget } from '@/components/quote-route-widget'
 import { RouteMiniMap } from '@/components/route-mini-map'
 
 type QuoteDetail = {
   id: string
+  publicCode?: string | null
   depotName?: string
   depotLat?: number | null
   depotLng?: number | null
@@ -93,6 +96,7 @@ export function QuoteDetailPage() {
   const [q, setQ] = useState<QuoteDetail | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const { setHeader } = useQuoteDetailHeader()
 
   const load = useCallback(async () => {
     if (!id) return
@@ -120,6 +124,19 @@ export function QuoteDetailPage() {
   useEffect(() => {
     void load()
   }, [load])
+
+  // Синхронизация заголовка шапки: номер и дата текущего расчёта
+  useEffect(() => {
+    if (q) {
+      setHeader({
+        publicCode: q.publicCode ?? null,
+        createdAt: q.createdAt,
+      })
+    }
+    return () => {
+      setHeader(null)
+    }
+  }, [q, setHeader])
 
   if (loading) {
     return (
@@ -174,18 +191,30 @@ export function QuoteDetailPage() {
         <div className="flex min-h-0 min-w-0 flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Расчёт</CardTitle>
-          <CardDescription className="space-y-1">
-            <span className="block">
-              {new Date(q.createdAt).toLocaleString('ru-RU')}
-            </span>
-            {q.depotName && (
-              <span className="block">Производство: {q.depotName}</span>
+          <QuoteRouteWidget
+            fromName={q.depotName?.trim() || 'Производство'}
+            fromAddressShort={
+              q.depotAddress?.trim()
+                ? formatObjectAddressLabel(q.depotAddress)
+                : null
+            }
+            toName={
+              (q.contractReference ?? '').trim() || 'Объект'
+            }
+            toAddressShort={
+              q.destinationAddress?.trim()
+                ? formatObjectAddressLabel(q.destinationAddress)
+                : null
+            }
+            distanceKm={formatKmNumber(q.distanceKm) ?? '—'}
+            totalRub={formatRubAmount(q.total)}
+            vehiclesCount={breakdownRows.reduce(
+              (acc, r) => acc + (r.quantity ?? 0),
+              0,
             )}
-            <span className="block">
-              Кто считал: {q.createdBy?.trim() ? q.createdBy.trim() : '—'}
-            </span>
-          </CardDescription>
+            vehicleTypes={breakdownRows.length}
+            authorName={q.createdBy}
+          />
         </CardHeader>
         <CardContent className="flex flex-col gap-8 text-sm">
           {(q.contractReference?.trim() ?? '') !== '' && (
@@ -207,7 +236,7 @@ export function QuoteDetailPage() {
               <p className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide">
                 Расстояние
               </p>
-              <p className="tabular-nums">{q.distanceKm} км</p>
+              <p className="tabular-nums">{formatDistanceKm(q.distanceKm)}</p>
             </div>
             <div>
               <p className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide">
@@ -259,7 +288,7 @@ export function QuoteDetailPage() {
                           {row.ratePerKm ?? '—'}
                         </td>
                         <td className={`${tc} text-right tabular-nums`}>
-                          {row.distanceKm ?? '—'}
+                          {formatKmNumber(row.distanceKm)}
                         </td>
                         <td className={`${tc} text-right tabular-nums`}>
                           {row.rawSubtotal != null

@@ -50,6 +50,8 @@ model TariffRule {
 /// Сохранённый расчёт стоимости доставки.
 model Quote {
   id                   String          @id @default(cuid())
+  /// Публичный код (6 символов A–Z и 0–9) для ссылок и устной передачи; не путать с внутренним id.
+  publicCode           String?         @unique
   depotId              String
   depot                Depot           @relation(fields: [depotId], references: [id])
   destinationAddress   String?

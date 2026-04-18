@@ -12,6 +12,7 @@ import 'leaflet/dist/leaflet.css'
 import { AddressLinesBlock } from '@/components/address-lines'
 import { Badge } from '@/components/ui/badge'
 import { hoverCardSurfaceClassName } from '@/components/ui/hover-card'
+import { formatDistanceKm } from '@/lib/format-km'
 import { cn } from '@/lib/utils'
 import type { LatLng, RouteMiniMapProps } from './route-mini-map.types'
 
@@ -32,15 +33,6 @@ function endpointPinIcon(kind: 'depot' | 'dest'): L.DivIcon {
     iconAnchor: [s / 2, (22 / 24) * s],
     popupAnchor: [0, -(22 / 24) * s],
   })
-}
-
-function formatDistanceKm(km: number): string {
-  const rounded = km >= 100 ? Math.round(km) : Math.round(km * 10) / 10
-  const s = new Intl.NumberFormat('ru-RU', {
-    minimumFractionDigits: km >= 100 ? 0 : 1,
-    maximumFractionDigits: km >= 100 ? 0 : 1,
-  }).format(rounded)
-  return `${s}\u00a0км`
 }
 
 function StopPopup({
