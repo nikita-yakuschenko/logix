@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import type { VehicleTypeRow } from "@/lib/vehicle-types-fallback"
-import { ChevronDownIcon } from "lucide-react"
+import { IconChevronDown } from "@tabler/icons-react"
 
 function formatTypeLabel(t: VehicleTypeRow) {
   return `${t.name} · ${t.tariff?.ratePerKm ?? "?"} ₽/км, мин. ${t.tariff?.minimumTotal ?? "?"} ₽`
@@ -58,9 +58,10 @@ export function VehicleTypeSelect({
         >
           {label}
         </span>
-        <ChevronDownIcon
+        <IconChevronDown
           aria-hidden
           className="pointer-events-none size-4 shrink-0 text-muted-foreground opacity-80"
+          stroke={1.75}
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent

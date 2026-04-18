@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { apiUrl } from '@/lib/api-url'
 import { cn } from '@/lib/utils'
 
 const inputClass =
@@ -63,7 +64,7 @@ export function AddressSuggestField({
     }
     setLoading(true)
     try {
-      const res = await fetch('/api/address/suggest', {
+      const res = await fetch(apiUrl('/api/address/suggest'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: t }),

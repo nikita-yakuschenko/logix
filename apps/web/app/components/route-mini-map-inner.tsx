@@ -13,20 +13,9 @@ import { AddressLinesBlock } from '@/components/address-lines'
 import { Badge } from '@/components/ui/badge'
 import { hoverCardSurfaceClassName } from '@/components/ui/hover-card'
 import { cn } from '@/lib/utils'
+import type { LatLng, RouteMiniMapProps } from './route-mini-map.types'
 
-export type LatLng = { lat: number; lng: number }
-
-/** Одна точка на карте: заголовок (Производство / договор) и строка адреса как ввёл пользователь. */
-export type MapRouteStop = LatLng & {
-  headline: string
-  addressLine: string
-}
-
-type Props = {
-  depot: MapRouteStop | null
-  destination: MapRouteStop | null
-  className?: string
-}
+type Props = RouteMiniMapProps
 
 /** Булавка (не круг): остриё на координате; адрес — во всплывающем окне по клику. */
 function endpointPinIcon(kind: 'depot' | 'dest'): L.DivIcon {
@@ -36,7 +25,6 @@ function endpointPinIcon(kind: 'depot' | 'dest'): L.DivIcon {
 <svg class="route-map-endpoint-pin__svg" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path class="route-map-endpoint-pin__shape" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
 </svg></div>`
-  // Нижняя вершина капли ≈ (12,22) в viewBox 24 — якорь на острие
   return L.divIcon({
     className: 'leaflet-div-icon route-map-endpoint',
     html,
@@ -55,10 +43,6 @@ function formatDistanceKm(km: number): string {
   return `${s}\u00a0км`
 }
 
-/**
- * Плашка как hover-card. `legDistanceKm` передаётся только у точки Б — расстояние А→Б;
- * у производства (А) проп не задаём.
- */
 function StopPopup({
   headline,
   addressLine,
@@ -66,7 +50,6 @@ function StopPopup({
 }: {
   headline: string
   addressLine: string
-  /** Только для точки назначения: км по плечу от А. */
   legDistanceKm?: number | null
 }) {
   const showBadge =
@@ -117,7 +100,6 @@ type OsrmResponse = {
   }>
 }
 
-/** Расстояние по дуге между двумя точками (км), если нет ответа OSRM. */
 function haversineKm(a: LatLng, b: LatLng): number {
   const R = 6371
   const toRad = (d: number) => (d * Math.PI) / 180
@@ -152,8 +134,8 @@ async function fetchRoadRoute(
   return { path, distanceKm }
 }
 
-/** Карта в нейтральных тонах: точки маршрута + линия (OSRM или прямая); адрес по клику во всплывающем окне. */
-export function RouteMiniMap({ depot, destination, className }: Props) {
+/** Только клиент: Leaflet требует window. */
+export function RouteMiniMapInner({ depot, destination, className }: Props) {
   const hasDepot =
     depot != null &&
     Number.isFinite(depot.lat) &&
@@ -189,7 +171,6 @@ export function RouteMiniMap({ depot, destination, className }: Props) {
   }, [depot, destination, hasDepot, hasDest])
 
   const [roadPath, setRoadPath] = useState<[number, number][] | null>(null)
-  /** Длина плеча по дорогам (OSRM, м → км); иначе null — показываем гаверсинус. */
   const [osrmDistanceKm, setOsrmDistanceKm] = useState<number | null>(null)
 
   const legDistanceKm = useMemo((): number | null => {

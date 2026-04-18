@@ -21,13 +21,13 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import {
-  BadgeCheckIcon,
-  BellIcon,
-  ChevronsUpDownIcon,
-  LogOutIcon,
-  SettingsIcon,
-} from "lucide-react"
-import { useNavigate } from "react-router-dom"
+  IconBadge,
+  IconBell,
+  IconChevronsDown,
+  IconLogout,
+  IconSettings,
+} from "@tabler/icons-react"
+import { useNavigate } from 'react-router'
 
 function initials(name: string) {
   const parts = name.split(/\s+/).filter(Boolean)
@@ -70,7 +70,7 @@ export function NavUser({
                 </span>
               ) : null}
             </div>
-            <ChevronsUpDownIcon className="ml-auto size-4 shrink-0" />
+            <IconChevronsDown className="ml-auto size-4 shrink-0" stroke={1.75} />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="min-w-56 rounded-lg"
@@ -99,21 +99,21 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <BadgeCheckIcon />
+                <IconBadge className="size-4" stroke={1.75} />
                 Аккаунт
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <BellIcon />
+                <IconBell className="size-4" stroke={1.75} />
                 Уведомления
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/settings")}>
-                <SettingsIcon />
+                <IconSettings className="size-4" stroke={1.75} />
                 Настройки
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive">
-              <LogOutIcon />
+              <IconLogout className="size-4" stroke={1.75} />
               Выйти
             </DropdownMenuItem>
           </DropdownMenuContent>

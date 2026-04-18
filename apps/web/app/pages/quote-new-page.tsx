@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { useNavigate } from 'react-router'
+import { apiUrl } from '@/lib/api-url'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -272,7 +273,7 @@ export function QuoteNewPage() {
 
   const loadTypes = useCallback(async () => {
     try {
-      const res = await fetch('/api/vehicle-types')
+      const res = await fetch(apiUrl('/api/vehicle-types'))
       if (!res.ok) {
         applyFallbackTypes()
         return
@@ -303,7 +304,7 @@ export function QuoteNewPage() {
   useEffect(() => {
     void (async () => {
       try {
-        const res = await fetch('/api/depot')
+        const res = await fetch(apiUrl('/api/depot'))
         if (!res.ok) return
         const d = (await res.json()) as {
           configured?: boolean
@@ -377,7 +378,7 @@ export function QuoteNewPage() {
     setCalcLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/quotes/preview', {
+      const res = await fetch(apiUrl('/api/quotes/preview'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildBody(false)),
@@ -400,7 +401,7 @@ export function QuoteNewPage() {
     setSaveLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/quotes', {
+      const res = await fetch(apiUrl('/api/quotes'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildBody(true)),
@@ -476,18 +477,6 @@ export function QuoteNewPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] px-6 py-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <Link
-          to="/"
-          className={cn(
-            buttonVariants({ variant: 'ghost', size: 'sm' }),
-            '-ml-2 text-muted-foreground',
-          )}
-        >
-          ← К списку
-        </Link>
-      </div>
-
       <div
         ref={layoutRef}
         className={cn(

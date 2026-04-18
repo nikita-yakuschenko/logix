@@ -1,13 +1,13 @@
 "use client"
 
-import { Link, useLocation } from "react-router-dom"
+import { Link, useLocation } from 'react-router'
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutListIcon, PlusIcon } from "lucide-react"
+import { IconLayoutList, IconPlus } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 
 export function NavMain() {
@@ -35,7 +35,7 @@ export function NavMain() {
               to="/"
               className="flex min-w-0 flex-1 items-center gap-2 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             >
-              <LayoutListIcon className="size-4 shrink-0" />
+              <IconLayoutList className="size-4 shrink-0" stroke={1.75} />
               <span className="truncate">Расчёты</span>
             </Link>
             <Link
@@ -48,8 +48,9 @@ export function NavMain() {
               )}
               onClick={(e) => e.stopPropagation()}
             >
-              <PlusIcon
-                className="block size-3.5 shrink-0 stroke-[2.25]"
+              <IconPlus
+                className="block size-3.5 shrink-0"
+                stroke={2.25}
                 aria-hidden
               />
               <span className="sr-only">Новый расчёт</span>

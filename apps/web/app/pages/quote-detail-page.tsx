@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { buttonVariants } from '@/components/ui/button'
+import { useParams } from 'react-router'
+import { apiUrl } from '@/lib/api-url'
 import {
   Card,
   CardContent,
@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { AddressLinesBlock } from '@/components/address-lines'
-import { cn } from '@/lib/utils'
 import { formatRubAmount } from '@/lib/format-rub'
 import { RouteMiniMap } from '@/components/route-mini-map'
 
@@ -100,7 +99,9 @@ export function QuoteDetailPage() {
     setLoading(true)
     setErr(null)
     try {
-      const res = await fetch(`/api/quotes/${encodeURIComponent(id)}`)
+      const res = await fetch(
+        apiUrl(`/api/quotes/${encodeURIComponent(id)}`),
+      )
       if (res.status === 404) {
         setErr('Расчёт не найден')
         setQ(null)
@@ -132,9 +133,6 @@ export function QuoteDetailPage() {
     return (
       <div className="mx-auto max-w-5xl space-y-4 px-6 py-6">
         <p className="text-destructive text-sm">{err ?? 'Нет данных'}</p>
-        <Link to="/" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
-          К списку расчётов
-        </Link>
       </div>
     )
   }
@@ -172,18 +170,6 @@ export function QuoteDetailPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] px-6 py-6">
-      <div className="mb-6 flex flex-wrap items-center gap-3">
-        <Link
-          to="/"
-          className={cn(
-            buttonVariants({ variant: 'ghost', size: 'sm' }),
-            '-ml-2 text-muted-foreground',
-          )}
-        >
-          ← К списку
-        </Link>
-      </div>
-
       <div className="flex flex-col gap-6 xl:grid xl:grid-cols-[1fr_minmax(420px,min(560px,44vw))] xl:items-stretch xl:gap-8">
         <div className="flex min-h-0 min-w-0 flex-col gap-6">
       <Card>
