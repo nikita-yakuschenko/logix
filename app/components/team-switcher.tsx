@@ -15,7 +15,7 @@ export function TeamSwitcher() {
           size="lg"
           tabIndex={-1}
           type="button"
-          className="pointer-events-none cursor-default hover:bg-transparent hover:text-sidebar-foreground active:bg-transparent"
+          className="pointer-events-none flex w-full cursor-default justify-center hover:bg-transparent hover:text-sidebar-foreground active:bg-transparent"
         >
           <img
             src="/logo_dark.svg"

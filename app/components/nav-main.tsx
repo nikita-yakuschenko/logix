@@ -4,11 +4,10 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { IconLayoutList, IconPlus } from "@tabler/icons-react"
+import { IconHome, IconLayoutList, IconPlus } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 
 export function NavMain() {
@@ -18,16 +17,16 @@ export function NavMain() {
   const detailActive =
     /^\/quotes\/[^/]+$/.test(pathname) && pathname !== "/quotes/new"
   const sectionActive = listActive || newActive || detailActive
+  const projectsActive = pathname === "/projects"
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Расчёты</SidebarGroupLabel>
-      <SidebarMenu>
+      <SidebarMenu className="space-y-1">
         <SidebarMenuItem>
           <div
             className={cn(
               "group/navitem peer/menu-button flex h-8 w-full min-w-0 items-center gap-1.5 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] focus-visible:ring-2",
-              "hover:bg-primary hover:text-primary-foreground",
+              "hover:bg-transparent hover:text-sidebar-foreground hover:ring-1 hover:ring-sidebar-ring",
               sectionActive &&
                 "bg-primary font-medium text-primary-foreground",
             )}
@@ -59,6 +58,19 @@ export function NavMain() {
               <span className="sr-only">Новый расчёт</span>
             </Link>
           </div>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <Link
+            href="/projects"
+            className={cn(
+              "peer/menu-button flex h-8 w-full min-w-0 items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] focus-visible:ring-2",
+              "hover:bg-transparent hover:text-sidebar-foreground hover:ring-1 hover:ring-sidebar-ring",
+              projectsActive && "bg-primary font-medium text-primary-foreground",
+            )}
+          >
+            <IconHome className="size-4 shrink-0" stroke={1.75} />
+            <span className="truncate">Проекты</span>
+          </Link>
         </SidebarMenuItem>
       </SidebarMenu>
     </SidebarGroup>

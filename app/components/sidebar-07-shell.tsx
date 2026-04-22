@@ -28,6 +28,8 @@ import { cn } from '@/lib/utils'
 const PAGE_TITLE: Record<string, string> = {
   '/': 'Расчёты',
   '/quotes/new': 'Новый расчёт',
+  '/projects': 'Проекты',
+  '/projects/new': 'Новый проект',
   '/settings': 'Настройки',
 }
 
@@ -39,10 +41,16 @@ function resolvePageTitle(pathname: string): string {
   return 'Раздел'
 }
 
-/** Страницы, где показываем «К списку» (не главная со списком). */
-function showBackToQuotesList(pathname: string): boolean {
+/** Страницы, где показываем «К списку». */
+function showBackToSectionList(pathname: string): boolean {
   if (pathname === '/quotes/new') return true
+  if (pathname === '/projects/new') return true
   return /^\/quotes\/[^/]+$/.test(pathname) && pathname !== '/quotes/new'
+}
+
+function resolveBackHref(pathname: string): string {
+  if (pathname === '/projects/new') return '/projects'
+  return '/'
 }
 
 function isQuoteDetailPath(pathname: string): boolean {
@@ -97,8 +105,11 @@ export function Sidebar07Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const pageTitle = resolvePageTitle(pathname)
-  const backToList = showBackToQuotesList(pathname)
+  const backToList = showBackToSectionList(pathname)
+  const backHref = resolveBackHref(pathname)
   const isQuotesList = pathname === '/'
+  const isProjectsList = pathname === '/projects'
+  const showSectionSearch = isQuotesList || isProjectsList
   const searchValue = searchParams.get('q') ?? ''
 
   // Обновление URL без истории: один шаг «назад» не перепрыгивает каждый ввод символа
@@ -127,7 +138,7 @@ export function Sidebar07Shell({ children }: { children: React.ReactNode }) {
               </div>
               {backToList && (
                 <Link
-                  href="/"
+                  href={backHref}
                   className={cn(
                     'text-muted-foreground hover:text-foreground -ml-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 transition-colors',
                     'hover:bg-muted/80',
@@ -139,7 +150,7 @@ export function Sidebar07Shell({ children }: { children: React.ReactNode }) {
               )}
               <HeaderTitle pathname={pathname} fallback={pageTitle} />
             </div>
-            {isQuotesList ? (
+            {showSectionSearch ? (
               <div className="flex min-w-0 flex-1 justify-center">
                 <div className="flex w-full max-w-xl items-center gap-2">
                   <div className="relative min-w-0 flex-1">
@@ -152,8 +163,12 @@ export function Sidebar07Shell({ children }: { children: React.ReactNode }) {
                       type="search"
                       value={searchValue}
                       onChange={(e) => updateSearch(e.target.value)}
-                      placeholder="Поиск по номеру, адресу, автору или дате"
-                      aria-label="Поиск по расчётам"
+                      placeholder={
+                        isQuotesList
+                          ? 'Поиск по номеру, адресу, автору или дате'
+                          : 'Поиск по проектам'
+                      }
+                      aria-label={isQuotesList ? 'Поиск по расчётам' : 'Поиск по проектам'}
                       className={cn(
                         'h-9 rounded-md pr-9 pl-9',
                         // гасим нативный крестик Chrome/Safari для type="search"
@@ -178,22 +193,22 @@ export function Sidebar07Shell({ children }: { children: React.ReactNode }) {
                       </button>
                     )}
                   </div>
-                  <QuotesFilters />
+                  {isQuotesList ? <QuotesFilters /> : null}
                 </div>
               </div>
             ) : (
               <div className="flex-1" aria-hidden />
             )}
-            {isQuotesList && (
+            {(isQuotesList || isProjectsList) && (
               <Link
-                href="/quotes/new"
+                href={isProjectsList ? '/projects/new' : '/quotes/new'}
                 className={cn(
                   // sm даёт text-[0.8rem] — мельче заголовка шапки и хуже по вертикали; lg (h-9) + text-sm + leading-none — ровнее в h-16
                   buttonVariants({ variant: 'default', size: 'lg' }),
                   'shrink-0 px-4 leading-none',
                 )}
               >
-                Новый расчёт
+                {isProjectsList ? 'Новый проект' : 'Новый расчёт'}
               </Link>
             )}
           </div>

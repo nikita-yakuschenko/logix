@@ -24,10 +24,10 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="none" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="h-16 justify-center border-b py-0">
         <TeamSwitcher />
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="pt-2">
         <NavMain />
       </SidebarContent>
       <SidebarFooter>
