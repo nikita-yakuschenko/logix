@@ -5,6 +5,7 @@ import * as React from "react"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
+import { DEFAULT_DISPLAY_NAME } from "@/settings/types"
 import {
   Sidebar,
   SidebarContent,
@@ -14,7 +15,7 @@ import {
 
 const data = {
   user: {
-    name: "Никита Якущенко",
+    name: DEFAULT_DISPLAY_NAME,
     email: "",
     avatar: "",
   },

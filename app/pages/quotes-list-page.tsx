@@ -17,6 +17,7 @@ import { quoteDetailPathSegment } from '@/lib/quote-path'
 import { cn } from '@/lib/utils'
 import { formatDistanceKm } from '@/lib/format-km'
 import { formatRubAmount } from '@/lib/format-rub'
+import { DEFAULT_DISPLAY_NAME } from '@/settings/types'
 
 const SKELETON_ROW_COUNT = 8
 /** Видимая ширина колонки «адрес» — ~70 знаков в единицах `ch`, без сокращения до порога; длиннее — ellipsis + title */
@@ -131,7 +132,7 @@ export function QuotesListPage() {
                   </th>
                   <th className={`${cell} font-medium`}>Адрес объекта</th>
                   <th className={`${cell} font-medium`}>Расстояние</th>
-                  <th className={`${cell} font-medium`}>Кто считал</th>
+                  <th className={`${cell} font-medium`}>Ответственный</th>
                   <th className={`${cell} text-right font-medium tabular-nums`}>
                     Сумма
                   </th>
@@ -209,9 +210,9 @@ export function QuotesListPage() {
                         </td>
                         <td
                           className={cn(cell, 'min-w-0 truncate')}
-                          title={q.createdBy ?? ''}
+                          title={q.createdBy?.trim() || DEFAULT_DISPLAY_NAME}
                         >
-                          {q.createdBy?.trim() ? q.createdBy.trim() : '—'}
+                          {q.createdBy?.trim() || DEFAULT_DISPLAY_NAME}
                         </td>
                         <td
                           className={`${cell} text-right font-medium tabular-nums`}

@@ -22,9 +22,11 @@ type Props = RouteMiniMapProps
 function endpointPinIcon(kind: 'depot' | 'dest'): L.DivIcon {
   const s = 30
   const k = kind === 'depot' ? 'depot' : 'dest'
+  const label = kind === 'depot' ? 'A' : 'B'
   const html = `<div class="route-map-endpoint-pin route-map-endpoint-pin--${k}" role="presentation" aria-hidden="true">
 <svg class="route-map-endpoint-pin__svg" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path class="route-map-endpoint-pin__shape" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+<text x="12" y="11.3" text-anchor="middle" dominant-baseline="middle" font-family="Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="8.5" font-weight="700" fill="white">${label}</text>
 </svg></div>`
   return L.divIcon({
     className: 'leaflet-div-icon route-map-endpoint',
@@ -63,7 +65,7 @@ function StopPopup({
           {formatDistanceKm(legDistanceKm)}
         </Badge>
       )}
-      <div className={cn('flex flex-col gap-0.5', showBadge && 'pr-[3.75rem]')}>
+      <div className={cn('flex flex-col gap-0.5', showBadge && 'pr-15')}>
         <div className="font-semibold">{headline}</div>
         <AddressLinesBlock text={addressLine || ''} />
       </div>
@@ -261,7 +263,7 @@ export function RouteMiniMapInner({ depot, destination, className }: Props) {
           <Polyline
             positions={drawnLine}
             pathOptions={{
-              color: pathKind === 'road' ? '#262626' : '#737373',
+              color: '#4169E1',
               weight: pathKind === 'road' ? 4 : 3,
               opacity: 0.88,
               dashArray: pathKind === 'road' ? undefined : '9 7',

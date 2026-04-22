@@ -5,7 +5,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { IconTruck } from "@tabler/icons-react"
 
 // Статичный бренд в шапке сайдбара, без выпадающего меню.
 export function TeamSwitcher() {
@@ -18,12 +17,12 @@ export function TeamSwitcher() {
           type="button"
           className="pointer-events-none cursor-default hover:bg-transparent hover:text-sidebar-foreground active:bg-transparent"
         >
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <IconTruck className="size-4" stroke={1.75} />
-          </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">logix</span>
-          </div>
+          <img
+            src="/logo_dark.svg"
+            alt="logix"
+            className="h-8 w-auto shrink-0"
+            draggable={false}
+          />
         </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>

@@ -10,13 +10,10 @@
  */
 import {
   IconBuildingFactory2,
-  IconCurrencyRubel,
   IconMapPinFilled,
-  IconRoute,
-  IconTruckDelivery,
-  IconUser,
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
+import { DEFAULT_DISPLAY_NAME } from '@/settings/types'
 import { cn } from '@/lib/utils'
 
 export type QuoteRouteWidgetProps = {
@@ -28,10 +25,8 @@ export type QuoteRouteWidgetProps = {
   distanceKm: string
   /** Уже отформатированная сумма без знака валюты. */
   totalRub: string
-  /** Суммарное количество машин (все типы). */
-  vehiclesCount: number
-  /** Число разных типов ТС. */
-  vehicleTypes: number
+  /** Человекочитаемая строка состава транспорта (например "1 фура и 1 трал"). */
+  transportSummary: string
   authorName: string | null
 }
 
@@ -43,8 +38,7 @@ export function QuoteRouteWidget(props: QuoteRouteWidgetProps) {
     toAddressShort,
     distanceKm,
     totalRub,
-    vehiclesCount,
-    vehicleTypes,
+    transportSummary,
     authorName,
   } = props
 
@@ -58,61 +52,47 @@ export function QuoteRouteWidget(props: QuoteRouteWidgetProps) {
     >
       <div className="pointer-events-none absolute inset-0 opacity-60 [background:radial-gradient(60%_120%_at_0%_0%,--theme(--color-primary/12%),transparent_60%),radial-gradient(60%_120%_at_100%_100%,--theme(--color-emerald-500/12%),transparent_60%)]" />
 
-      <div className="relative flex min-w-0 items-center gap-3 sm:gap-4">
+      <div className="relative flex min-w-0 items-center justify-between gap-3 sm:gap-4">
         <Endpoint
           icon={<IconBuildingFactory2 size={18} stroke={1.75} />}
           tint="primary"
-          label="Откуда"
+          label="Производство"
           name={fromName}
           addressShort={fromAddressShort}
           align="left"
         />
 
-        <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-semibold">
-            <IconRoute size={14} stroke={2} className="text-muted-foreground" />
-            <span className="tabular-nums">{distanceKm}</span>
-            <span className="text-muted-foreground font-medium">км</span>
-          </div>
-          <RouteTrack />
-        </div>
-
         <Endpoint
           icon={<IconMapPinFilled size={18} stroke={1.75} />}
           tint="emerald"
-          label="Куда"
+          label="Объект"
           name={toName}
           addressShort={toAddressShort}
           align="right"
         />
       </div>
 
-      <div className="relative mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-3 text-xs">
+      <div className="relative mt-3">
+        <RouteTrack distanceKm={distanceKm} />
+      </div>
+
+      <div className="relative mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 pt-2 text-xs">
         <Metric
-          icon={<IconCurrencyRubel size={14} stroke={2} />}
-          label="Сумма"
-          value={<span className="tabular-nums">{totalRub} ₽</span>}
+          label="Стоимость перевозки"
+          value={<span className="tabular-nums">{totalRub}</span>}
           accent
         />
         <Metric
-          icon={<IconTruckDelivery size={14} stroke={2} />}
-          label="Парк"
-          value={
-            <span className="tabular-nums">
-              {vehiclesCount} {pluralVehicle(vehiclesCount)}
-              {vehicleTypes > 1 && (
-                <span className="text-muted-foreground">
-                  {' '}
-                  · {vehicleTypes} {pluralTypes(vehicleTypes)}
-                </span>
-              )}
-            </span>
-          }
+          label="Транспорт"
+          value={<span className="tabular-nums">{transportSummary}</span>}
         />
         <Metric
-          icon={<IconUser size={14} stroke={2} />}
-          label="Кто считал"
-          value={<span className="truncate">{authorName?.trim() || '—'}</span>}
+          label="Ответственный"
+          value={
+            <span className="truncate">
+              {authorName?.trim() || DEFAULT_DISPLAY_NAME}
+            </span>
+          }
         />
       </div>
     </div>
@@ -175,81 +155,31 @@ function Endpoint({
   )
 }
 
-function RouteTrack() {
+function RouteTrack({ distanceKm }: { distanceKm: string }) {
   return (
-    <div className="relative h-6 w-full">
-      <svg
-        width="100%"
-        height="24"
-        viewBox="0 0 100 24"
-        preserveAspectRatio="none"
-        className="block h-full w-full overflow-visible"
-        aria-hidden
-      >
-        <defs>
-          <linearGradient id="quoteRouteGrad" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" className="[stop-color:var(--color-primary)]" stopOpacity="0.6" />
-            <stop offset="100%" className="[stop-color:var(--color-emerald-500)]" stopOpacity="0.6" />
-          </linearGradient>
-        </defs>
-
-        <circle cx="1.5" cy="12" r="2.2" className="fill-primary" />
-        <line
-          x1="4"
-          x2="96"
-          y1="12"
-          y2="12"
-          stroke="url(#quoteRouteGrad)"
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          strokeOpacity="0.35"
-        />
-        <line
-          x1="4"
-          x2="96"
-          y1="12"
-          y2="12"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeDasharray="3 4"
-          stroke="url(#quoteRouteGrad)"
-        />
-
-        <circle cx="98.5" cy="12" r="2.2" className="fill-emerald-500" />
-      </svg>
-
-      <div
-        className="pointer-events-none absolute top-1/2 -translate-y-1/2"
-        style={{ left: '48%' }}
-        aria-hidden
-      >
-        <div
-          className={cn(
-            'flex size-5 items-center justify-center rounded-full',
-            'bg-background text-foreground ring-1 ring-border shadow-sm',
-          )}
-        >
-          <IconTruckDelivery size={14} stroke={2} />
-        </div>
-      </div>
+    <div className="flex w-full items-center gap-2.5">
+      <span className="bg-primary size-2.5 shrink-0 rounded-full" aria-hidden />
+      <span className="border-primary/45 block h-0 w-full flex-1 border-t border-dashed" aria-hidden />
+      <span className="bg-background text-foreground border-border inline-flex shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold tabular-nums">
+        {distanceKm} км
+      </span>
+      <span className="border-emerald-500/45 block h-0 w-full flex-1 border-t border-dashed" aria-hidden />
+      <span className="bg-emerald-500 size-2.5 shrink-0 rounded-full" aria-hidden />
     </div>
   )
 }
 
 function Metric({
-  icon,
   label,
   value,
   accent = false,
 }: {
-  icon: ReactNode
   label: string
   value: ReactNode
   accent?: boolean
 }) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
-      <span className="text-muted-foreground shrink-0">{icon}</span>
       <span className="text-muted-foreground">{label}:</span>
       <span
         className={cn(
@@ -263,20 +193,3 @@ function Metric({
   )
 }
 
-function pluralVehicle(n: number): string {
-  const abs = Math.abs(n)
-  const mod10 = abs % 10
-  const mod100 = abs % 100
-  if (mod10 === 1 && mod100 !== 11) return 'машина'
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'машины'
-  return 'машин'
-}
-
-function pluralTypes(n: number): string {
-  const abs = Math.abs(n)
-  const mod10 = abs % 10
-  const mod100 = abs % 100
-  if (mod10 === 1 && mod100 !== 11) return 'тип'
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'типа'
-  return 'типов'
-}

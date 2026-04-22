@@ -10,8 +10,37 @@ import { cn } from "@/lib/utils"
 import type { VehicleTypeRow } from "@/lib/vehicle-types-fallback"
 import { IconChevronDown } from "@tabler/icons-react"
 
+function canonicalVehicleTypeName(rawName: string): string {
+  const raw = rawName.trim().toLowerCase()
+  if (!raw) return rawName
+
+  if (
+    raw.includes("еврофур") ||
+    raw.includes("евро фур") ||
+    raw.includes("фура") ||
+    raw.includes("20т") ||
+    raw.includes("20 т")
+  ) {
+    return "Еврофура (тент)"
+  }
+
+  if (raw.includes("трал") || raw.includes("низкорам")) {
+    return "Низкорамный трал"
+  }
+
+  if (
+    (raw.includes("фургон") || raw.includes("грузовой")) &&
+    (raw.includes("5т") || raw.includes("5 т") || raw.includes("5тон") || raw.includes("5 тонн"))
+  ) {
+    return "Грузовой фургон (5 тонн)"
+  }
+
+  return rawName
+}
+
 function formatTypeLabel(t: VehicleTypeRow) {
-  return `${t.name} · ${t.tariff?.ratePerKm ?? "?"} ₽/км, мин. ${t.tariff?.minimumTotal ?? "?"} ₽`
+  const canonicalName = canonicalVehicleTypeName(t.name)
+  return `${canonicalName} · ${t.tariff?.ratePerKm ?? "?"} ₽/км, мин. ${t.tariff?.minimumTotal ?? "?"} ₽`
 }
 
 export function VehicleTypeSelect({
@@ -44,7 +73,7 @@ export function VehicleTypeSelect({
               "flex h-9 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-input bg-background pl-3 pr-4 text-left text-sm shadow-sm",
               "outline-none transition-[color,box-shadow]",
               "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 focus-visible:ring-offset-0",
-              "data-[popup-open]:border-ring data-[popup-open]:ring-2 data-[popup-open]:ring-ring/30 data-[popup-open]:ring-offset-0",
+              "data-popup-open:border-ring data-popup-open:ring-2 data-popup-open:ring-ring/30 data-popup-open:ring-offset-0",
               "disabled:cursor-not-allowed disabled:opacity-50",
             )}
           />
@@ -67,7 +96,7 @@ export function VehicleTypeSelect({
       <DropdownMenuContent
         align="start"
         sideOffset={6}
-        className="max-h-60 min-w-[var(--anchor-width)] overflow-y-auto rounded-xl p-1.5 shadow-md ring-1 ring-foreground/10"
+        className="max-h-60 min-w-(--anchor-width) overflow-y-auto rounded-xl p-1.5 shadow-md ring-1 ring-foreground/10"
       >
         <DropdownMenuItem
           className="cursor-pointer rounded-lg"
@@ -81,7 +110,7 @@ export function VehicleTypeSelect({
             className="cursor-pointer rounded-lg"
             onClick={() => onChange(t.id)}
           >
-            <span className="whitespace-normal break-words">
+            <span className="whitespace-normal wrap-break-word">
               {formatTypeLabel(t)}
             </span>
           </DropdownMenuItem>

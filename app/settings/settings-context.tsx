@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react'
 import {
+  DEFAULT_DISPLAY_NAME,
   DEFAULT_SETTINGS,
   SETTINGS_KEY,
   type LogixSettings,
@@ -31,7 +32,9 @@ function load(): LogixSettings {
     return {
       ...DEFAULT_SETTINGS,
       displayName:
-        typeof p.displayName === 'string' ? p.displayName : '',
+        typeof p.displayName === 'string' && p.displayName.trim().length > 0
+          ? p.displayName
+          : DEFAULT_DISPLAY_NAME,
       version: 2,
     }
   } catch {
