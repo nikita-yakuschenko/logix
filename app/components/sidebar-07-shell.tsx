@@ -38,6 +38,9 @@ function resolvePageTitle(pathname: string): string {
   if (/^\/quotes\/[^/]+$/.test(pathname) && pathname !== '/quotes/new') {
     return 'Расчёт'
   }
+  if (/^\/projects\/[^/]+$/.test(pathname) && pathname !== '/projects/new') {
+    return 'Тип проекта'
+  }
   return 'Раздел'
 }
 
@@ -45,11 +48,13 @@ function resolvePageTitle(pathname: string): string {
 function showBackToSectionList(pathname: string): boolean {
   if (pathname === '/quotes/new') return true
   if (pathname === '/projects/new') return true
+  if (/^\/projects\/[^/]+$/.test(pathname) && pathname !== '/projects/new') return true
   return /^\/quotes\/[^/]+$/.test(pathname) && pathname !== '/quotes/new'
 }
 
 function resolveBackHref(pathname: string): string {
   if (pathname === '/projects/new') return '/projects'
+  if (/^\/projects\/[^/]+$/.test(pathname) && pathname !== '/projects/new') return '/projects'
   return '/'
 }
 

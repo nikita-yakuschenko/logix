@@ -23,7 +23,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar collapsible="none" {...props}>
+    <Sidebar collapsible="none" className="sticky top-0 h-svh" {...props}>
       <SidebarHeader className="h-16 justify-center border-b py-0">
         <TeamSwitcher />
       </SidebarHeader>
