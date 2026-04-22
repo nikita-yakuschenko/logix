@@ -160,7 +160,7 @@ function RouteTrack({ distanceKm }: { distanceKm: string }) {
     <div className="flex w-full items-center gap-2.5">
       <span className="bg-primary size-2.5 shrink-0 rounded-full" aria-hidden />
       <span className="border-primary/45 block h-0 w-full flex-1 border-t border-dashed" aria-hidden />
-      <span className="bg-background text-foreground border-border inline-flex shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold tabular-nums">
+      <span className="bg-background text-foreground border-border inline-flex shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-semibold tabular-nums sm:text-sm">
         {distanceKm} км
       </span>
       <span className="border-emerald-500/45 block h-0 w-full flex-1 border-t border-dashed" aria-hidden />
@@ -183,7 +183,7 @@ function Metric({
       <span className="text-muted-foreground">{label}:</span>
       <span
         className={cn(
-          'min-w-0 truncate',
+          'min-w-0 truncate text-xs sm:text-sm',
           accent ? 'text-foreground font-semibold' : 'font-medium',
         )}
       >

@@ -9,9 +9,8 @@ import {
   CardContent,
   CardHeader,
 } from '@/components/ui/card'
-import { AddressLinesBlock } from '@/components/address-lines'
 import { formatAddressThreeLines, formatObjectAddressLabel } from '@/lib/format-address-lines'
-import { formatDistanceKm, formatKmNumber } from '@/lib/format-km'
+import { formatKmNumber } from '@/lib/format-km'
 import { formatRubAmount } from '@/lib/format-rub'
 import { QuoteRouteWidget } from '@/components/quote-route-widget'
 import { RouteMiniMap } from '@/components/route-mini-map'
@@ -40,12 +39,8 @@ type BreakdownRow = {
   vehicleTypeId?: string
   vehicleName?: string
   quantity?: number
-  ratePerKm?: string
   distanceKm?: number
-  rawSubtotal?: string
   subtotal?: string
-  minimumTotal?: string
-  minimumApplied?: boolean
 }
 
 function parseBreakdown(raw: unknown): BreakdownRow[] {
@@ -174,33 +169,56 @@ function formatTransportSummary(rows: BreakdownRow[]): string {
   return `${parts.slice(0, -1).join(', ')} и ${parts[parts.length - 1]}`
 }
 
+function calcTransportRatePerVehicle(row: BreakdownRow): string | null {
+  const subtotal = Number(row.subtotal ?? NaN)
+  if (!Number.isFinite(subtotal)) return null
+  const qty = Math.max(1, Number(row.quantity ?? 1))
+  return (subtotal / qty).toFixed(2)
+}
+
 function RoutingMetaBlock({ meta }: { meta: unknown }) {
   if (meta == null || typeof meta !== 'object') {
     return <p className="text-muted-foreground">—</p>
   }
   const o = meta as Record<string, unknown>
   const rows: { label: string; value: string }[] = []
-  if (typeof o.note === 'string' && o.note.trim()) {
-    rows.push({ label: 'Примечание', value: o.note })
+  const geocodedAs =
+    typeof o.geocodedAs === 'string' && o.geocodedAs.trim()
+      ? o.geocodedAs.trim()
+      : null
+  const airKm =
+    typeof o.airKm === 'number' && Number.isFinite(o.airKm) ? o.airKm : null
+  const roadFactor =
+    typeof o.roadFactor === 'number' && Number.isFinite(o.roadFactor)
+      ? o.roadFactor
+      : null
+  const note =
+    typeof o.note === 'string' && o.note.trim() ? o.note.trim() : null
+
+  if (geocodedAs) {
+    rows.push({ label: 'Распознанный адрес', value: geocodedAs })
   }
-  if (typeof o.geocodedAs === 'string' && o.geocodedAs.trim()) {
-    rows.push({ label: 'Как распознан адрес', value: o.geocodedAs })
+  if (airKm != null) {
+    rows.push({
+      label: 'Расстояние по прямой',
+      value: `${airKm.toFixed(1)} км`,
+    })
   }
-  for (const [key, val] of Object.entries(o)) {
-    if (key === 'note' || key === 'geocodedAs') continue
-    const value =
-      val === null || val === undefined
-        ? '—'
-        : typeof val === 'object'
-          ? JSON.stringify(val)
-          : String(val)
-    rows.push({ label: key, value })
+  if (roadFactor != null) {
+    rows.push({
+      label: 'Коэффициент дорожной сети',
+      value: roadFactor.toFixed(2),
+    })
   }
+  if (note) {
+    rows.push({ label: 'Комментарий', value: note })
+  }
+
   if (rows.length === 0) {
     return <p className="text-muted-foreground">—</p>
   }
   return (
-    <dl className="grid gap-3 sm:grid-cols-[minmax(0,200px)_1fr] sm:gap-x-6">
+    <dl className="grid gap-3 sm:grid-cols-[minmax(0,260px)_1fr] sm:gap-x-6">
       {rows.map(({ label, value }, idx) => (
         <div key={`${label}-${idx}`} className="contents">
           <dt className="text-muted-foreground text-sm">{label}</dt>
@@ -358,45 +376,24 @@ export function QuoteDetailPage() {
           />
         </CardHeader>
         <CardContent className="flex flex-col gap-8 text-sm">
-          {(q.contractReference?.trim() ?? '') !== '' && (
+          <div className="grid gap-6 md:grid-cols-2">
             <div>
               <p className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide">
-                Договор / объект
+                Адрес объекта (земельного участка)
               </p>
-              <p className="whitespace-pre-wrap">{q.contractReference?.trim()}</p>
-            </div>
-          )}
-          <div>
-            <p className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide">
-              Куда
-            </p>
-            <AddressLinesBlock text={q.destinationAddress?.trim() ?? ''} />
-          </div>
-          <div className="flex flex-wrap gap-8">
-            <div>
-              <p className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide">
-                Расстояние
-              </p>
-              <p className="tabular-nums">{formatDistanceKm(q.distanceKm)}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide">
-                Источник км
-              </p>
-              <p>
-                {q.distanceSource === 'MANUAL_OVERRIDE' ? 'вручную' : 'карта'}
+              <p className="truncate" title={q.destinationAddress?.trim() ?? '—'}>
+                {q.destinationAddress?.trim() || '—'}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide">
-                Итого
+              <p className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wide">
+                Название проекта
               </p>
-              <p className="text-lg font-semibold tabular-nums">
-                {formatRubAmount(q.total)}
+              <p className="truncate" title={(q.contractReference ?? '').trim() || '—'}>
+                {(q.contractReference ?? '').trim() || '—'}
               </p>
             </div>
           </div>
-
           <div>
             <p className="text-muted-foreground mb-3 text-xs font-medium uppercase tracking-wide">
               По типам транспорта
@@ -410,16 +407,14 @@ export function QuoteDetailPage() {
                     <tr>
                       <th className={`${thc} text-left`}>Тип ТС</th>
                       <th className={`${thc} text-right tabular-nums`}>Кол-во</th>
-                      <th className={`${thc} text-right tabular-nums`}>₽/км</th>
-                      <th className={`${thc} text-right tabular-nums`}>Км</th>
-                      <th className={`${thc} text-right`}>По формуле</th>
-                      <th className={`${thc} text-right`}>Итого строки</th>
-                      <th className={`${thc} text-right`}>Минимум</th>
-                      <th className={`${thc} text-left`}>Мин. сработал</th>
+                      <th className={`${thc} text-right`}>Ставка</th>
+                      <th className={`${thc} text-right`}>Сумма</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {breakdownRows.map((row, i) => (
+                    {breakdownRows.map((row, i) => {
+                      const transportRate = calcTransportRatePerVehicle(row)
+                      return (
                       <tr key={`${row.vehicleTypeId ?? 'row'}-${i}`}>
                         <td className={tc}>
                           {canonicalVehicleTypeDisplayName(row.vehicleName ?? '')}
@@ -428,14 +423,8 @@ export function QuoteDetailPage() {
                           {row.quantity ?? '—'}
                         </td>
                         <td className={`${tc} text-right tabular-nums`}>
-                          {row.ratePerKm ?? '—'}
-                        </td>
-                        <td className={`${tc} text-right tabular-nums`}>
-                          {formatKmNumber(row.distanceKm)}
-                        </td>
-                        <td className={`${tc} text-right tabular-nums`}>
-                          {row.rawSubtotal != null
-                            ? formatRubAmount(row.rawSubtotal)
+                          {transportRate != null
+                            ? formatRubAmount(transportRate)
                             : '—'}
                         </td>
                         <td className={`${tc} text-right font-medium tabular-nums`}>
@@ -443,20 +432,9 @@ export function QuoteDetailPage() {
                             ? formatRubAmount(row.subtotal)
                             : '—'}
                         </td>
-                        <td className={`${tc} text-right tabular-nums`}>
-                          {row.minimumTotal != null
-                            ? formatRubAmount(row.minimumTotal)
-                            : '—'}
-                        </td>
-                        <td className={tc}>
-                          {row.minimumApplied === true
-                            ? 'да'
-                            : row.minimumApplied === false
-                              ? 'нет'
-                              : '—'}
-                        </td>
                       </tr>
-                    ))}
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
