@@ -16,7 +16,6 @@ import {
   IconTruckDelivery,
   IconUser,
 } from '@tabler/icons-react'
-import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
@@ -53,11 +52,11 @@ export function QuoteRouteWidget(props: QuoteRouteWidgetProps) {
     <div
       className={cn(
         'relative overflow-hidden rounded-xl border',
-        'bg-gradient-to-br from-primary/5 via-background to-emerald-500/5',
+        'bg-linear-to-br from-primary/5 via-background to-emerald-500/5',
         'p-4 sm:p-5',
       )}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-60 [background:radial-gradient(60%_120%_at_0%_0%,theme(colors.primary/12%),transparent_60%),radial-gradient(60%_120%_at_100%_100%,theme(colors.emerald.500/12%),transparent_60%)]" />
+      <div className="pointer-events-none absolute inset-0 opacity-60 [background:radial-gradient(60%_120%_at_0%_0%,--theme(--color-primary/12%),transparent_60%),radial-gradient(60%_120%_at_100%_100%,--theme(--color-emerald-500/12%),transparent_60%)]" />
 
       <div className="relative flex min-w-0 items-center gap-3 sm:gap-4">
         <Endpoint
@@ -148,16 +147,14 @@ function Endpoint({
       )}
       style={{ maxWidth: 'calc(50% - 40px)' }}
     >
-      <motion.div
+      <div
         className={cn(
           'flex size-9 shrink-0 items-center justify-center rounded-lg ring-1',
           iconWrap,
         )}
-        animate={{ scale: [1, 1.05, 1] }}
-        transition={{ duration: 2.2, ease: 'easeInOut', repeat: Infinity }}
       >
         {icon}
-      </motion.div>
+      </div>
       <div className="min-w-0">
         <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
           {label}
@@ -191,22 +188,12 @@ function RouteTrack() {
       >
         <defs>
           <linearGradient id="quoteRouteGrad" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" className="[stop-color:theme(colors.primary)]" stopOpacity="0.6" />
-            <stop offset="100%" className="[stop-color:theme(colors.emerald.500)]" stopOpacity="0.6" />
+            <stop offset="0%" className="[stop-color:var(--color-primary)]" stopOpacity="0.6" />
+            <stop offset="100%" className="[stop-color:var(--color-emerald-500)]" stopOpacity="0.6" />
           </linearGradient>
         </defs>
 
         <circle cx="1.5" cy="12" r="2.2" className="fill-primary" />
-        <motion.circle
-          cx="1.5"
-          cy="12"
-          r="4"
-          className="fill-primary"
-          initial={{ opacity: 0.35 }}
-          animate={{ r: [4, 7, 4], opacity: [0.35, 0, 0.35] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
-        />
-
         <line
           x1="4"
           x2="96"
@@ -217,46 +204,23 @@ function RouteTrack() {
           strokeLinecap="round"
           strokeOpacity="0.35"
         />
-        <motion.line
+        <line
           x1="4"
           x2="96"
           y1="12"
           y2="12"
           strokeWidth="1.6"
           strokeLinecap="round"
-          strokeDasharray="2 3"
+          strokeDasharray="3 4"
           stroke="url(#quoteRouteGrad)"
-          initial={{ strokeDashoffset: 0 }}
-          animate={{ strokeDashoffset: -20 }}
-          transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
         />
 
         <circle cx="98.5" cy="12" r="2.2" className="fill-emerald-500" />
-        <motion.circle
-          cx="98.5"
-          cy="12"
-          r="4"
-          className="fill-emerald-500"
-          initial={{ opacity: 0.35 }}
-          animate={{ r: [4, 7, 4], opacity: [0.35, 0, 0.35] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut', delay: 0.9 }}
-        />
       </svg>
 
-      <motion.div
+      <div
         className="pointer-events-none absolute top-1/2 -translate-y-1/2"
-        initial={{ left: '2%', opacity: 0 }}
-        animate={{
-          left: ['2%', '92%'],
-          opacity: [0, 1, 1, 0],
-        }}
-        transition={{
-          duration: 3.6,
-          ease: 'easeInOut',
-          times: [0, 0.08, 0.92, 1],
-          repeat: Infinity,
-          repeatDelay: 0.6,
-        }}
+        style={{ left: '48%' }}
         aria-hidden
       >
         <div
@@ -267,7 +231,7 @@ function RouteTrack() {
         >
           <IconTruckDelivery size={14} stroke={2} />
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
