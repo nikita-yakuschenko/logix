@@ -4,12 +4,30 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import {
+  type ColumnDef,
+  type SortingState,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
+import { IconChevronDown, IconSelector } from '@tabler/icons-react'
+import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { apiUrl } from '@/lib/api-url'
 
 type ProjectTypeRow = {
@@ -18,10 +36,33 @@ type ProjectTypeRow = {
   recordsCount: number
 }
 
+function SortableHead({
+  title,
+  sorted,
+}: {
+  title: string
+  sorted: false | 'asc' | 'desc'
+}) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span>{title}</span>
+      {sorted === false ? (
+        <IconSelector className="text-muted-foreground/70 size-3.5" stroke={1.75} />
+      ) : (
+        <IconChevronDown
+          className={`size-3.5 transition-transform ${sorted === 'asc' ? 'rotate-180' : ''}`}
+          stroke={1.75}
+        />
+      )}
+    </span>
+  )
+}
+
 export function ProjectsPage() {
   const searchParams = useSearchParams()
   const q = (searchParams.get('q') ?? '').trim().toLowerCase()
   const [rows, setRows] = useState<ProjectTypeRow[]>([])
+  const [sorting, setSorting] = useState<SortingState>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -58,6 +99,73 @@ export function ProjectsPage() {
     })
   }, [rows, q])
 
+  const totalRecords = useMemo(
+    () => rows.reduce((acc, row) => acc + row.recordsCount, 0),
+    [rows],
+  )
+
+  const columns = useMemo<ColumnDef<ProjectTypeRow>[]>(
+    () => [
+      {
+        accessorKey: 'projectType',
+        header: ({ column }) => (
+          <button
+            type="button"
+            className="hover:text-foreground inline-flex items-center"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            <SortableHead
+              title="Тип проекта"
+              sorted={column.getIsSorted() as false | 'asc' | 'desc'}
+            />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <Link
+            href={`/projects/${row.original.slug}`}
+            className="text-foreground hover:text-primary block truncate font-medium underline-offset-2 hover:underline"
+          >
+            {row.original.projectType}
+          </Link>
+        ),
+      },
+      {
+        accessorKey: 'recordsCount',
+        header: ({ column }) => (
+          <div className="text-right">
+            <button
+              type="button"
+              className="hover:text-foreground inline-flex items-center justify-end"
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            >
+              <SortableHead
+                title="Кол-во записей"
+                sorted={column.getIsSorted() as false | 'asc' | 'desc'}
+              />
+            </button>
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            <Badge variant="outline" className="tabular-nums">
+              {row.original.recordsCount}
+            </Badge>
+          </div>
+        ),
+      },
+    ],
+    [],
+  )
+
+  const table = useReactTable({
+    data: filtered,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  })
+
   return (
     <div className="mx-auto flex w-full max-w-[min(100%,96rem)] flex-col gap-6 px-6 py-6">
       <Card>
@@ -66,6 +174,11 @@ export function ProjectsPage() {
           <CardDescription>
             Данные загружаются из Excel-файла `Довозки - перевозки (1).xlsx`.
           </CardDescription>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <Badge variant="secondary">Типов: {rows.length}</Badge>
+            <Badge variant="outline">Записей: {totalRecords}</Badge>
+            {q ? <Badge variant="outline">Фильтр: {q}</Badge> : null}
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -77,30 +190,42 @@ export function ProjectsPage() {
               {q ? 'По вашему запросу проекты не найдены.' : 'Нет данных для отображения.'}
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border">
-              <table className="w-full min-w-[720px] border-collapse text-sm">
-                <thead>
-                  <tr>
-                    <th className="border-border/80 bg-muted/40 border px-3 py-2 text-left font-medium">Тип проекта</th>
-                    <th className="border-border/80 bg-muted/40 border px-3 py-2 text-right font-medium">Кол-во записей</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((row) => (
-                    <tr key={row.slug}>
-                      <td className="border-border/80 border px-3 py-2 align-top">
-                        <Link
-                          href={`/projects/${row.slug}`}
-                          className="text-foreground hover:text-primary underline-offset-2 hover:underline"
+            <div className="overflow-hidden rounded-xl border">
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow className="hover:bg-muted/30">
+                    {table.getHeaderGroups().map((headerGroup) =>
+                      headerGroup.headers.map((header) => (
+                        <TableHead
+                          key={header.id}
+                          className={header.id === 'recordsCount' ? 'text-right' : ''}
                         >
-                          {row.projectType}
-                        </Link>
-                      </td>
-                      <td className="border-border/80 border px-3 py-2 text-right align-top tabular-nums">{row.recordsCount}</td>
-                    </tr>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                        </TableHead>
+                      )),
+                    )}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows.map((row) => (
+                    <TableRow key={row.id}>
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          className={cell.column.id === 'recordsCount' ? 'text-right' : ''}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
